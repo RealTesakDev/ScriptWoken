@@ -1,3 +1,109 @@
+-- Services 
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting") -- To adjust brightness and fog
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local camera = Workspace.CurrentCamera
+
+local walkSpeed = 0 -- Speed in studs per second
+
+-- Variables for highlight functionality
+local highlightFillColor = Color3.new(1, 1, 1) -- Default white fill color
+local outlineColor = Color3.new(1, 1, 1) -- Default white outline color
+local highlightPlayersEnabled = false -- Toggle state for players
+local highlightMobsEnabled = false -- Toggle state for mobs
+local highlightItemsEnabled = false -- Toggle state for items
+
+-- Function to create a highlight
+local function createHighlight(object)
+    if not object:FindFirstChildOfClass("Highlight") then
+        local highlight = Instance.new("Highlight")
+        highlight.Parent = object
+        highlight.Adornee = object
+        highlight.FillColor = highlightFillColor
+        highlight.OutlineColor = outlineColor
+        highlight.FillTransparency = 0.5
+        highlight.OutlineTransparency = 0.5
+    end
+end
+
+-- Function to remove highlight
+local function removeHighlight(object)
+    local highlight = object:FindFirstChildOfClass("Highlight")
+    if highlight then
+        highlight:Destroy()
+    end
+end
+
+-- Function to update highlights periodically
+local function updateHighlights()
+    if highlightPlayersEnabled then
+        -- Highlight players
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                createHighlight(player.Character)
+            end
+        end
+    else
+        -- Remove highlights for players
+        for _, player in pairs(Players:GetPlayers()) do
+            if player.Character then
+                removeHighlight(player.Character)
+            end
+        end
+    end
+    
+    if highlightMobsEnabled then
+        -- Highlight mobs
+        local mobs = Workspace:FindFirstChild("Live") -- Folder containing mobs
+        if mobs then
+            for _, mob in pairs(mobs:GetChildren()) do
+                createHighlight(mob)
+            end
+        end
+    else
+        -- Remove highlights for mobs
+        local mobs = Workspace:FindFirstChild("Live")
+        if mobs then
+            for _, mob in pairs(mobs:GetChildren()) do
+                removeHighlight(mob)
+            end
+        end
+    end
+    
+    if highlightItemsEnabled then
+        -- Highlight buyable items
+        local items = Workspace:FindFirstChild("Shops") -- Folder containing items
+        if items then
+            for _, item in pairs(items:GetChildren()) do
+                createHighlight(item)
+            end
+        end
+    else
+        -- Remove highlights for items
+        local items = Workspace:FindFirstChild("Shops")
+        if items then
+            for _, item in pairs(items:GetChildren()) do
+                removeHighlight(item)
+            end
+        end
+    end
+end
+
+-- Function to update highlight colors
+local function updateHighlightColors(newFillColor, newOutlineColor)
+    highlightFillColor = newFillColor or highlightFillColor
+    outlineColor = newOutlineColor or outlineColor
+
+    -- Update the highlights for existing players, mobs, and items
+    updateHighlights()
+end
+
 -- Dollarware example script
 
 -- Snag the ui loader function (loadstring the link, but don't call it)
@@ -19,7 +125,7 @@ local window = ui.newWindow({
 
 -- Visuals Menu
 local visualsMenu = window:addMenu({
-    text = 'Visuals' -- Renamed this menu from 'menu 1' to 'Visuals'
+    text = 'Visuals'
 })
 
 do 
@@ -30,30 +136,48 @@ do
         showMinButton = true
     })
     
-    section1:addLabel({
-        text = 'Visual Effect Toggle'
-    })
-    
-    local visualsToggle = section1:addToggle({
-        text = 'Toggle Visuals',
+    -- Highlight Players toggle
+    local highlightPlayersToggle = section1:addToggle({
+        text = 'Highlight Players',
         state = false
     })
     
-    visualsToggle:bindToEvent('onToggle', function(newState)
+    highlightPlayersToggle:bindToEvent('onToggle', function(newState)
+        highlightPlayersEnabled = newState -- Enable/disable player highlighting
+        updateHighlights() -- Update the highlights immediately
         ui.notify({
-            title = 'Visuals Toggle',
-            message = 'Visuals toggled to ' .. tostring(newState),
+            title = 'Highlight Toggle',
+            message = 'Highlight Players toggled to ' .. tostring(newState),
             duration = 3
         })
     end)
-    
-    section1:addButton({
-        text = 'Apply Visuals',
-        style = 'large'
-    }, function()
+
+    -- Mob ESP toggle
+    local mobESPToggle = section1:addToggle({
+        text = 'Mob ESP',
+        state = false
+    })
+    mobESPToggle:bindToEvent('onToggle', function(newState)
+        highlightMobsEnabled = newState -- Enable/disable mob highlighting
+        updateHighlights() -- Update the highlights immediately
         ui.notify({
-            title = 'Apply Visuals',
-            message = 'Visuals applied!',
+            title = 'Mob ESP Toggle',
+            message = 'Mob ESP toggled to ' .. tostring(newState),
+            duration = 3
+        })
+    end)
+
+    -- Buyable Item ESP toggle
+    local itemESPToggle = section1:addToggle({
+        text = 'Buyable Item ESP',
+        state = false
+    })
+    itemESPToggle:bindToEvent('onToggle', function(newState)
+        highlightItemsEnabled = newState -- Enable/disable item highlighting
+        updateHighlights() -- Update the highlights immediately
+        ui.notify({
+            title = 'Item ESP Toggle',
+            message = 'Buyable Item ESP toggled to ' .. tostring(newState),
             duration = 3
         })
     end)
@@ -67,6 +191,7 @@ local section2 = visualsMenu:addSection({
 })
 
 do
+    -- Brightness adjustment slider
     section2:addSlider({
         text = 'Adjust Brightness',
         min = 0,
@@ -74,54 +199,67 @@ do
         step = 1,
         val = 50
     }, function(newValue)
-        print("Brightness set to:", newValue)
+        -- Adjust the lighting's brightness based on the slider value
+        Lighting.Brightness = newValue / 100
+        ui.notify({
+            title = 'Brightness',
+            message = 'Brightness set to ' .. tostring(newValue),
+            duration = 3
+        })
     end)
-    
+
+    -- Remove fog button
+    section2:addButton({
+        text = 'Remove Fog',
+        style = 'large'
+    }, function()
+        -- Remove fog by adjusting lighting properties
+        Lighting.FogEnd = 100000 -- Set to a high value to remove the fog effect
+        ui.notify({
+            title = 'Fog Removal',
+            message = 'Fog has been removed!',
+            duration = 3
+        })
+    end)
+
+    -- Color picker for highlight fill color
     section2:addColorPicker({
-        text = 'Select Color',
-        color = Color3.fromRGB(255, 0, 0)
+        text = 'Highlight Fill Color',
+        color = highlightFillColor
     }, function(newColor)
-        print("Selected color:", newColor)
+        updateHighlightColors(newColor, nil) -- Update fill color
+    end)
+
+    -- Color picker for outline color
+    section2:addColorPicker({
+        text = 'Outline Color',
+        color = outlineColor
+    }, function(newColor)
+        updateHighlightColors(nil, newColor) -- Update outline color
     end)
 end
 
 -- Player Menu
 local playerMenu = window:addMenu({
-    text = 'Player' -- New Player Menu
+    text = 'Player'
 })
 
 do
     -- First section under Player
     local section1 = playerMenu:addSection({
-        text = 'Player Settings 1',
+        text = 'Player Settings ',
         side = 'left',
         showMinButton = true
     })
     
-    section1:addLabel({
-        text = 'Player ESP Toggle'
-    })
-    
-    local playerEspToggle = section1:addToggle({
-        text = 'Enable ESP',
-        state = false
-    })
-    
-    playerEspToggle:bindToEvent('onToggle', function(newState)
-        ui.notify({
-            title = 'Player ESP Toggle',
-            message = 'ESP toggled to ' .. tostring(newState),
-            duration = 3
-        })
-    end)
-    
+    -- Button to rejoin server
     section1:addButton({
-        text = 'Apply ESP',
+        text = 'Rejoin Server',
         style = 'large'
     }, function()
         ui.notify({
-            title = 'Apply ESP',
-            message = 'ESP applied!',
+            title = 'Rejoin Server',
+            message = 'Please Wait!',
             duration = 3
         })
     end)
@@ -129,7 +267,7 @@ end
 
 -- Second section under Player
 local section2 = playerMenu:addSection({
-    text = 'Player Settings 2',
+    text = 'Player Movement ',
     side = 'right',
     showMinButton = true
 })
@@ -138,11 +276,12 @@ do
     section2:addSlider({
         text = 'Adjust Speed',
         min = 1,
-        max = 50,
+        max = 250,
         step = 1,
         val = 10
-    }, function(newValue)
-        print("Speed set to:", newValue)
+    }, function(value)
+        walkSpeed = value -- Update the walkSpeed variable based on the slider value
+        print("Speed set to:", value)
     end)
     
     section2:addTextbox({
@@ -154,4 +293,74 @@ do
             duration = 4
         })
     end)
+
+
+    -- Slider to adjust player jump power
+    section2:addSlider({
+        text = 'Jump Power',
+        min = 0,
+        max = 200,
+        step = 1,
+        val = 50
+    }, function(newValue)
+        -- Adjust player's jump power
+        local humanoid = character:WaitForChild("Humanoid")
+        humanoid.JumpPower = newValue
+    end)
 end
+
+-- Tp Walk Stuff
+
+local movementDirection = Vector3.new(0, 0, 0)
+
+-- Function to update the movement direction based on key inputs
+local function updateMovementDirection()
+    movementDirection = Vector3.new(0, 0, 0)
+    
+    -- Get the camera's look vector
+    local cameraLookVector = camera.CFrame.LookVector
+    
+    -- Break down the look vector into the XZ plane
+    local cameraDirection = Vector3.new(cameraLookVector.X, 0, cameraLookVector.Z).Unit
+
+    -- Right direction relative to the camera
+    local cameraRight = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
+
+    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+        movementDirection = movementDirection + cameraDirection
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+        movementDirection = movementDirection - cameraDirection
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+        movementDirection = movementDirection - cameraRight
+    end
+    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+        movementDirection = movementDirection + cameraRight
+    end
+
+    -- Normalize direction to ensure consistent speed
+    if movementDirection.Magnitude > 0 then
+        movementDirection = movementDirection.Unit
+    end
+end
+
+-- Function to move the character using CFrame with increased speed
+local function moveCharacter(deltaTime)
+    if movementDirection.Magnitude > 0 then
+        -- Calculate the new position using CFrame
+        local displacement = movementDirection * walkSpeed * deltaTime
+        local newCFrame = humanoidRootPart.CFrame + displacement
+        humanoidRootPart.CFrame = newCFrame
+    end
+end
+
+-- Input listeners to update the movement direction
+UserInputService.InputBegan:Connect(updateMovementDirection)
+UserInputService.InputEnded:Connect(updateMovementDirection)
+
+-- Connect the moveCharacter function to RunService's RenderStepped for smooth movement
+RunService.RenderStepped:Connect(function(deltaTime)
+    updateMovementDirection()
+    moveCharacter(deltaTime)
+end)
