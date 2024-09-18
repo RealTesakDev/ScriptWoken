@@ -22,12 +22,12 @@ local window = ui.newWindow({
     position = nil -- Custom position, defaults to roughly the bottom right corner
 })
 
-local menu = window:addMenu({
+local test = window:addMenu({
     text = 'menu 1' -- Title of menu
 })
 do 
     -- Menus have sections which house all the controls    
-    local section = menu:addSection({
+    local section = test:addSection({
         text = 'section 1', -- Title of section
         side = 'auto', -- Side of the menu that the section is placed on. Defaults to 'auto', but can be 'left' or 'right'
         showMinButton = true, -- Ability to minimize this section. Defaults to true
