@@ -1,122 +1,157 @@
 -- Dollarware example script
 
--- Snag the ui loader function thingy (loadstring the link, but dont call it)
+-- Snag the ui loader function (loadstring the link, but don't call it)
 local uiLoader = loadstring(game:HttpGet('https://raw.githubusercontent.com/topitbopit/dollarware/main/library.lua'))
--- Because of the way the library loads, settings are handled on the loadstring call
 local ui = uiLoader({
-    rounding = false, -- Whether certain features get rounded 
-    theme = 'cherry', -- The theme. Available themes are: cherry, orange, lemon, lime, raspberry, blueberry, grape, watermelon
-    smoothDragging = false -- Smooth dragging
+    rounding = false,
+    theme = 'cherry',
+    smoothDragging = false
 })
 
-ui.autoDisableToggles = true -- All toggles will automatically be disabled when the ui is destroyed (window is closed)
--- so you don't have to manually handle everything. This defaults to true!
+ui.autoDisableToggles = true
 
--- Make a window, which houses all the stuff for the gui
--- Technically multiple windows can be made, but there is no (and likely wont ever be) official support for them
--- since its a lot of work for such a minute use
+-- Create the main window
 local window = ui.newWindow({
-    text = 'Deepwoven', -- Title of window 
-    resize = true, -- Ability to resize
-    size = Vector2.new(550, 376), -- Window size, accepts UDim2s and Vector2s
-    position = nil -- Custom position, defaults to roughly the bottom right corner
+    text = 'Deepwoven',
+    resize = true,
+    size = Vector2.new(550, 376)
 })
 
-local test = window:addMenu({
-    text = 'menu 1' -- Title of menu
+-- Visuals Menu
+local visualsMenu = window:addMenu({
+    text = 'Visuals' -- Renamed this menu from 'menu 1' to 'Visuals'
 })
+
 do 
-    -- Menus have sections which house all the controls    
-    local section = test:addSection({
-        text = 'section 1', -- Title of section
-        side = 'auto', -- Side of the menu that the section is placed on. Defaults to 'auto', but can be 'left' or 'right'
-        showMinButton = true, -- Ability to minimize this section. Defaults to true
+    -- First section under Visuals
+    local section1 = visualsMenu:addSection({
+        text = 'Visuals Section 1',
+        side = 'left',
+        showMinButton = true
     })
     
-    do 
-        section:addLabel({
-            text = 'text' -- Self explanatory
-        })
-        
-        local toggle = section:addToggle({
-            text = 'toggle', 
-            state = false -- Starting state of the toggle - doesn't automatically call the callback
-        })
-        
-        toggle:bindToEvent('onToggle', function(newState) -- Call a function when toggled
-            ui.notify({
-                title = 'toggle',
-                message = 'Toggle was toggled to ' .. tostring(newState),
-                duration = 3
-            })
-        end)
-        
-        section:addButton({
-            text = 'button (small)', 
-            style = 'small' -- style of the button, can be 'large' or 'small'
-        }):bindToEvent('onClick', function() -- Call a function when clicked
-            ui.notify({
-                title = 'button',
-                message = 'The button got clicked!',
-                duration = 3
-            })
-        end)
-        
-        section:addButton({
-            text = 'button (large)', 
-            style = 'large' -- style of the button, can be 'large' or 'small'
-        }, function() -- you don't have to always use bindToEvent, just passing a callback normally works fine
-            ui.notify({
-                title = 'button',
-                message = 'The large button got clicked!',
-                duration = 3
-            })
-        end):setTooltip('this is a large button')
-        
-        local hotkey = section:addHotkey({
-            text = 'hotkey'
-        })
-        hotkey:setHotkey(Enum.KeyCode.G)
-        hotkey:setTooltip('This is a hotkey linked to the toggle!')
-        hotkey:linkToControl(toggle)
-    end
-    
-    local section = menu:addSection({
-        text = 'section 2',
-        side = 'right',
-        showMinButton = false
+    section1:addLabel({
+        text = 'Visual Effect Toggle'
     })
-    do 
-        section:addSlider({
-            text = 'slider',
-            min = 1,
-            max = 150,
-            step = 0.01,
-            val = 50
-        }, function(newValue) 
-            print(newValue)
-        end):setTooltip('Heres a slider!')
-        
-        section:addColorPicker({
-            text = 'color picker',
-            color = Color3.fromRGB(255, 0, 0)
-        }, function(newColor) 
-            print(newColor)
-        end)
-        
-        section:addTextbox({
-            text = 'textbox'
-        }):bindToEvent('onFocusLost', function(text) 
-            ui.notify({
-                title = 'textbox',
-                message = text,
-                duration = 4
-            })
-        end)
-    end
     
+    local visualsToggle = section1:addToggle({
+        text = 'Toggle Visuals',
+        state = false
+    })
+    
+    visualsToggle:bindToEvent('onToggle', function(newState)
+        ui.notify({
+            title = 'Visuals Toggle',
+            message = 'Visuals toggled to ' .. tostring(newState),
+            duration = 3
+        })
+    end)
+    
+    section1:addButton({
+        text = 'Apply Visuals',
+        style = 'large'
+    }, function()
+        ui.notify({
+            title = 'Apply Visuals',
+            message = 'Visuals applied!',
+            duration = 3
+        })
+    end)
 end
 
-window:addMenu({
-    text = 'menu 2'
+-- Second section under Visuals
+local section2 = visualsMenu:addSection({
+    text = 'Visuals Section 2',
+    side = 'right',
+    showMinButton = true
 })
+
+do
+    section2:addSlider({
+        text = 'Adjust Brightness',
+        min = 0,
+        max = 100,
+        step = 1,
+        val = 50
+    }, function(newValue)
+        print("Brightness set to:", newValue)
+    end)
+    
+    section2:addColorPicker({
+        text = 'Select Color',
+        color = Color3.fromRGB(255, 0, 0)
+    }, function(newColor)
+        print("Selected color:", newColor)
+    end)
+end
+
+-- Player Menu
+local playerMenu = window:addMenu({
+    text = 'Player' -- New Player Menu
+})
+
+do
+    -- First section under Player
+    local section1 = playerMenu:addSection({
+        text = 'Player Settings 1',
+        side = 'left',
+        showMinButton = true
+    })
+    
+    section1:addLabel({
+        text = 'Player ESP Toggle'
+    })
+    
+    local playerEspToggle = section1:addToggle({
+        text = 'Enable ESP',
+        state = false
+    })
+    
+    playerEspToggle:bindToEvent('onToggle', function(newState)
+        ui.notify({
+            title = 'Player ESP Toggle',
+            message = 'ESP toggled to ' .. tostring(newState),
+            duration = 3
+        })
+    end)
+    
+    section1:addButton({
+        text = 'Apply ESP',
+        style = 'large'
+    }, function()
+        ui.notify({
+            title = 'Apply ESP',
+            message = 'ESP applied!',
+            duration = 3
+        })
+    end)
+end
+
+-- Second section under Player
+local section2 = playerMenu:addSection({
+    text = 'Player Settings 2',
+    side = 'right',
+    showMinButton = true
+})
+
+do
+    section2:addSlider({
+        text = 'Adjust Speed',
+        min = 1,
+        max = 50,
+        step = 1,
+        val = 10
+    }, function(newValue)
+        print("Speed set to:", newValue)
+    end)
+    
+    section2:addTextbox({
+        text = 'Player Name'
+    }):bindToEvent('onFocusLost', function(text)
+        ui.notify({
+            title = 'Player Name',
+            message = 'Name entered: ' .. text,
+            duration = 4
+        })
+    end)
+end
