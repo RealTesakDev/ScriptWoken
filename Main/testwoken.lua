@@ -16,29 +16,29 @@ ui.autoDisableToggles = true -- All toggles will automatically be disabled when 
 -- Technically multiple windows can be made, but there is no (and likely wont ever be) official support for them
 -- since its a lot of work for such a minute use
 local window = ui.newWindow({
-    text = 'DeepWoven', -- Title of window 
+    text = 'Deepwovem', -- Title of window 
     resize = true, -- Ability to resize
     size = Vector2.new(550, 376), -- Window size, accepts UDim2s and Vector2s
     position = nil -- Custom position, defaults to roughly the bottom right corner
 })
 
-local Visual = window:addMenu({
-    text = 'Visual' -- Title of menu
+local menu = window:addMenu({
+    text = 'menu 1' -- Title of menu
 })
 do 
     -- Menus have sections which house all the controls    
-    local VisualSec = menu:addSection({
+    local section = menu:addSection({
         text = 'section 1', -- Title of section
         side = 'auto', -- Side of the menu that the section is placed on. Defaults to 'auto', but can be 'left' or 'right'
         showMinButton = true, -- Ability to minimize this section. Defaults to true
     })
     
     do 
-        VisualSec:addLabel({
+        section:addLabel({
             text = 'text' -- Self explanatory
         })
         
-        local toggle = VisualSec:addToggle({
+        local toggle = section:addToggle({
             text = 'toggle', 
             state = false -- Starting state of the toggle - doesn't automatically call the callback
         })
@@ -51,7 +51,7 @@ do
             })
         end)
         
-        VisualSec:addButton({
+        section:addButton({
             text = 'button (small)', 
             style = 'small' -- style of the button, can be 'large' or 'small'
         }):bindToEvent('onClick', function() -- Call a function when clicked
@@ -62,7 +62,7 @@ do
             })
         end)
         
-        VisualSec:addButton({
+        section:addButton({
             text = 'button (large)', 
             style = 'large' -- style of the button, can be 'large' or 'small'
         }, function() -- you don't have to always use bindToEvent, just passing a callback normally works fine
