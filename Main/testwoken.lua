@@ -1,32 +1,122 @@
-local RunService = game:GetService("RunService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CoreGui = game:GetService("CoreGui")
-local workspace = game:GetService("Workspace")
+-- Dollarware example script
 
--- Load and initialize the Dollarware UI Library
-local success, err = pcall(function()
-    loadstring(game:HttpGet('https://raw.githubusercontent.com/Dollarware-UI/Roblox-Library/main/DollarwareLib.lua'))()
-end)
-
-if not success then
-    warn("Failed to load Dollarware UI library: " .. err)
-    return -- Stop script execution if library failed to load
-end
-
-local Library = DollarwareLib -- Ensure the function or object is correctly referenced
-
--- Check if the Library loaded properly
-if not Library then
-    error("Failed to initialize Dollarware UI library. Ensure the URL and library setup are correct.")
-end
-
--- Create the main UI window
-local Window = Library:CreateWindow({
-    Title = "ESP & Highlight Settings",
-    Size = UDim2.new(0, 425, 0, 512)
+-- Snag the ui loader function thingy (loadstring the link, but dont call it)
+local uiLoader = loadstring(game:HttpGet('https://raw.githubusercontent.com/topitbopit/dollarware/main/library.lua'))
+-- Because of the way the library loads, settings are handled on the loadstring call
+local ui = uiLoader({
+    rounding = false, -- Whether certain features get rounded 
+    theme = 'cherry', -- The theme. Available themes are: cherry, orange, lemon, lime, raspberry, blueberry, grape, watermelon
+    smoothDragging = false -- Smooth dragging
 })
 
--- Create a "Visuals" tab
-local VisualsTab = Window:AddTab("Visuals")
+ui.autoDisableToggles = true -- All toggles will automatically be disabled when the ui is destroyed (window is closed)
+-- so you don't have to manually handle everything. This defaults to true!
 
--- Continue the rest of the script as it was...
+-- Make a window, which houses all the stuff for the gui
+-- Technically multiple windows can be made, but there is no (and likely wont ever be) official support for them
+-- since its a lot of work for such a minute use
+local window = ui.newWindow({
+    text = 'DeepWoven', -- Title of window 
+    resize = true, -- Ability to resize
+    size = Vector2.new(550, 376), -- Window size, accepts UDim2s and Vector2s
+    position = nil -- Custom position, defaults to roughly the bottom right corner
+})
+
+local Visual = window:addMenu({
+    text = 'Visual' -- Title of menu
+})
+do 
+    -- Menus have sections which house all the controls    
+    local VisualSec = menu:addSection({
+        text = 'section 1', -- Title of section
+        side = 'auto', -- Side of the menu that the section is placed on. Defaults to 'auto', but can be 'left' or 'right'
+        showMinButton = true, -- Ability to minimize this section. Defaults to true
+    })
+    
+    do 
+        VisualSec:addLabel({
+            text = 'text' -- Self explanatory
+        })
+        
+        local toggle = VisualSec:addToggle({
+            text = 'toggle', 
+            state = false -- Starting state of the toggle - doesn't automatically call the callback
+        })
+        
+        toggle:bindToEvent('onToggle', function(newState) -- Call a function when toggled
+            ui.notify({
+                title = 'toggle',
+                message = 'Toggle was toggled to ' .. tostring(newState),
+                duration = 3
+            })
+        end)
+        
+        VisualSec:addButton({
+            text = 'button (small)', 
+            style = 'small' -- style of the button, can be 'large' or 'small'
+        }):bindToEvent('onClick', function() -- Call a function when clicked
+            ui.notify({
+                title = 'button',
+                message = 'The button got clicked!',
+                duration = 3
+            })
+        end)
+        
+        VisualSec:addButton({
+            text = 'button (large)', 
+            style = 'large' -- style of the button, can be 'large' or 'small'
+        }, function() -- you don't have to always use bindToEvent, just passing a callback normally works fine
+            ui.notify({
+                title = 'button',
+                message = 'The large button got clicked!',
+                duration = 3
+            })
+        end):setTooltip('this is a large button')
+        
+        local hotkey = section:addHotkey({
+            text = 'hotkey'
+        })
+        hotkey:setHotkey(Enum.KeyCode.G)
+        hotkey:setTooltip('This is a hotkey linked to the toggle!')
+        hotkey:linkToControl(toggle)
+    end
+    
+    local section = menu:addSection({
+        text = 'section 2',
+        side = 'right',
+        showMinButton = false
+    })
+    do 
+        section:addSlider({
+            text = 'slider',
+            min = 1,
+            max = 150,
+            step = 0.01,
+            val = 50
+        }, function(newValue) 
+            print(newValue)
+        end):setTooltip('Heres a slider!')
+        
+        section:addColorPicker({
+            text = 'color picker',
+            color = Color3.fromRGB(255, 0, 0)
+        }, function(newColor) 
+            print(newColor)
+        end)
+        
+        section:addTextbox({
+            text = 'textbox'
+        }):bindToEvent('onFocusLost', function(text) 
+            ui.notify({
+                title = 'textbox',
+                message = text,
+                duration = 4
+            })
+        end)
+    end
+    
+end
+
+window:addMenu({
+    text = 'menu 2'
+})
