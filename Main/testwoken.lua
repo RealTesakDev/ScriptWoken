@@ -16,7 +16,7 @@ ui.autoDisableToggles = true -- All toggles will automatically be disabled when 
 -- Technically multiple windows can be made, but there is no (and likely wont ever be) official support for them
 -- since its a lot of work for such a minute use
 local window = ui.newWindow({
-    text = 'Deepwovem', -- Title of window 
+    text = 'Deepwoven', -- Title of window 
     resize = true, -- Ability to resize
     size = Vector2.new(550, 376), -- Window size, accepts UDim2s and Vector2s
     position = nil -- Custom position, defaults to roughly the bottom right corner
