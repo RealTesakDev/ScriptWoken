@@ -18,6 +18,7 @@ local outlineColor = Color3.new(1, 1, 1) -- Default white outline color
 local highlightPlayersEnabled = false -- Toggle state for players
 local highlightMobsEnabled = false -- Toggle state for mobs
 local highlightItemsEnabled = false -- Toggle state for items
+local chestESPEnabled = false -- Toggle state for Chest ESP
 
 -- Function to create a highlight
 local function createHighlight(object)
@@ -40,7 +41,23 @@ local function removeHighlight(object)
     end
 end
 
--- Function to update highlights periodically
+-- Function to update Chest ESP
+local function updateChestESP()
+    local thrownFolder = Workspace:FindFirstChild("Thrown")
+    if thrownFolder then
+        for _, object in pairs(thrownFolder:GetChildren()) do
+            if object:FindFirstChild("Lid") then
+                if chestESPEnabled then
+                    createHighlight(object)
+                else
+                    removeHighlight(object)
+                end
+            end
+        end
+    end
+end
+
+-- Function to update all highlights periodically
 local function updateHighlights()
     if highlightPlayersEnabled then
         -- Highlight players
@@ -93,6 +110,9 @@ local function updateHighlights()
             end
         end
     end
+
+    -- Update Chest ESP
+    updateChestESP()
 end
 
 -- Function to update highlight colors
@@ -100,11 +120,11 @@ local function updateHighlightColors(newFillColor, newOutlineColor)
     highlightFillColor = newFillColor or highlightFillColor
     outlineColor = newOutlineColor or outlineColor
 
-    -- Update the highlights for existing players, mobs, and items
+    -- Update the highlights for existing players, mobs, items, and chests
     updateHighlights()
 end
 
--- Dollarware example script
+-- Dollarware UI setup and integration
 
 -- Snag the ui loader function (loadstring the link, but don't call it)
 local uiLoader = loadstring(game:HttpGet('https://raw.githubusercontent.com/topitbopit/dollarware/main/library.lua'))
@@ -178,6 +198,21 @@ do
         ui.notify({
             title = 'Item ESP Toggle',
             message = 'Buyable Item ESP toggled to ' .. tostring(newState),
+            duration = 3
+        })
+    end)
+
+    -- Chest ESP toggle (new feature)
+    local chestESPToggle = section1:addToggle({
+        text = 'Chest ESP',
+        state = false
+    })
+    chestESPToggle:bindToEvent('onToggle', function(newState)
+        chestESPEnabled = newState -- Enable/disable Chest ESP
+        updateHighlights() -- Update the highlights immediately
+        ui.notify({
+            title = 'Chest ESP Toggle',
+            message = 'Chest ESP toggled to ' .. tostring(newState),
             duration = 3
         })
     end)
