@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local Lighting = game:GetService("Lighting") -- To adjust brightness and fog
+local TeleportService = game:GetService("TeleportService") -- For rejoining the server
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -13,21 +14,25 @@ local camera = Workspace.CurrentCamera
 local walkSpeed = 0 -- Speed in studs per second
 
 -- Variables for highlight functionality
-local highlightFillColor = Color3.new(1, 1, 1) -- Default white fill color
-local outlineColor = Color3.new(1, 1, 1) -- Default white outline color
+local highlightFillColor = Color3.fromRGB(255, 101, 27) -- Default fill color (255, 101, 27)
+local outlineColor = Color3.fromRGB(255, 255, 255) -- Default white outline color
 local highlightPlayersEnabled = false -- Toggle state for players
 local highlightMobsEnabled = false -- Toggle state for mobs
 local highlightItemsEnabled = false -- Toggle state for items
-local chestESPEnabled = false -- Toggle state for Chest ESP
+local chestHighlightEnabled = false -- Toggle state for chest highlighting
+
+-- Variables for spectate functionality
+local spectatePlayerName = "" -- Player name to spectate
+local spectatePlayerEnabled = false -- Toggle state for spectating
 
 -- Function to create a highlight
-local function createHighlight(object)
+local function createHighlight(object, fillColor, outlineColor)
     if not object:FindFirstChildOfClass("Highlight") then
         local highlight = Instance.new("Highlight")
         highlight.Parent = object
         highlight.Adornee = object
-        highlight.FillColor = highlightFillColor
-        highlight.OutlineColor = outlineColor
+        highlight.FillColor = fillColor or highlightFillColor
+        highlight.OutlineColor = outlineColor or outlineColor
         highlight.FillTransparency = 0.5
         highlight.OutlineTransparency = 0.5
     end
@@ -41,78 +46,83 @@ local function removeHighlight(object)
     end
 end
 
--- Function to update Chest ESP
-local function updateChestESP()
+-- Function to update highlights dynamically
+local function updateHighlights()
+    local liveFolder = Workspace:FindFirstChild("Live")
+    local shopsFolder = Workspace:FindFirstChild("Shops")
     local thrownFolder = Workspace:FindFirstChild("Thrown")
-    if thrownFolder then
-        for _, object in pairs(thrownFolder:GetChildren()) do
-            if object:FindFirstChild("Lid") then
-                if chestESPEnabled then
-                    createHighlight(object)
-                else
-                    removeHighlight(object)
+
+    -- Create a set of player names
+    local playerNames = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        playerNames[p.Name] = true
+    end
+
+    -- Highlight players
+    if highlightPlayersEnabled then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                createHighlight(p.Character, highlightFillColor, outlineColor)
+            end
+        end
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            if p.Character then
+                removeHighlight(p.Character)
+            end
+        end
+    end
+
+    -- Highlight mobs
+    if highlightMobsEnabled then
+        if liveFolder then
+            for _, mob in pairs(liveFolder:GetChildren()) do
+                if not playerNames[mob.Name] then
+                    createHighlight(mob, highlightFillColor, outlineColor)
                 end
             end
         end
-    end
-end
-
--- Function to update all highlights periodically
-local function updateHighlights()
-    if highlightPlayersEnabled then
-        -- Highlight players
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                createHighlight(player.Character)
-            end
-        end
     else
-        -- Remove highlights for players
-        for _, player in pairs(Players:GetPlayers()) do
-            if player.Character then
-                removeHighlight(player.Character)
-            end
-        end
-    end
-    
-    if highlightMobsEnabled then
-        -- Highlight mobs
-        local mobs = Workspace:FindFirstChild("Live") -- Folder containing mobs
-        if mobs then
-            for _, mob in pairs(mobs:GetChildren()) do
-                createHighlight(mob)
-            end
-        end
-    else
-        -- Remove highlights for mobs
-        local mobs = Workspace:FindFirstChild("Live")
-        if mobs then
-            for _, mob in pairs(mobs:GetChildren()) do
+        if liveFolder then
+            for _, mob in pairs(liveFolder:GetChildren()) do
                 removeHighlight(mob)
             end
         end
     end
-    
+
+    -- Highlight buyable items
     if highlightItemsEnabled then
-        -- Highlight buyable items
-        local items = Workspace:FindFirstChild("Shops") -- Folder containing items
-        if items then
-            for _, item in pairs(items:GetChildren()) do
-                createHighlight(item)
+        if shopsFolder then
+            for _, item in pairs(shopsFolder:GetChildren()) do
+                createHighlight(item, highlightFillColor, outlineColor)
             end
         end
     else
-        -- Remove highlights for items
-        local items = Workspace:FindFirstChild("Shops")
-        if items then
-            for _, item in pairs(items:GetChildren()) do
+        if shopsFolder then
+            for _, item in pairs(shopsFolder:GetChildren()) do
                 removeHighlight(item)
             end
         end
     end
 
-    -- Update Chest ESP
-    updateChestESP()
+    -- Highlight chests
+    if chestHighlightEnabled then
+        if thrownFolder then
+            for _, model in pairs(thrownFolder:GetChildren()) do
+                if model:IsA("Model") and model:FindFirstChild("Lid") then
+                    createHighlight(model, highlightFillColor, outlineColor)
+                else
+                    removeHighlight(model)
+                end
+            end
+        end
+    else
+        if thrownFolder then
+            for _, model in pairs(thrownFolder:GetChildren()) do
+                removeHighlight(model)
+            end
+        end
+    end
 end
 
 -- Function to update highlight colors
@@ -124,7 +134,26 @@ local function updateHighlightColors(newFillColor, newOutlineColor)
     updateHighlights()
 end
 
--- Dollarware UI setup and integration
+-- Function to spectate a player
+local function spectatePlayer(playerName)
+    local targetPlayer = Players:FindFirstChild(playerName)
+    if targetPlayer and targetPlayer.Character then
+        camera.CameraSubject = targetPlayer.Character:FindFirstChildOfClass("Humanoid")
+    else
+        ui.notify({
+            title = 'Spectate Error',
+            message = 'Player not found or character not loaded.',
+            duration = 3
+        })
+    end
+end
+
+-- Function to stop spectating
+local function stopSpectating()
+    camera.CameraSubject = character:FindFirstChildOfClass("Humanoid")
+end
+
+-- Dollarware example script
 
 -- Snag the ui loader function (loadstring the link, but don't call it)
 local uiLoader = loadstring(game:HttpGet('https://raw.githubusercontent.com/topitbopit/dollarware/main/library.lua'))
@@ -164,7 +193,6 @@ do
     
     highlightPlayersToggle:bindToEvent('onToggle', function(newState)
         highlightPlayersEnabled = newState -- Enable/disable player highlighting
-        updateHighlights() -- Update the highlights immediately
         ui.notify({
             title = 'Highlight Toggle',
             message = 'Highlight Players toggled to ' .. tostring(newState),
@@ -179,7 +207,6 @@ do
     })
     mobESPToggle:bindToEvent('onToggle', function(newState)
         highlightMobsEnabled = newState -- Enable/disable mob highlighting
-        updateHighlights() -- Update the highlights immediately
         ui.notify({
             title = 'Mob ESP Toggle',
             message = 'Mob ESP toggled to ' .. tostring(newState),
@@ -194,25 +221,9 @@ do
     })
     itemESPToggle:bindToEvent('onToggle', function(newState)
         highlightItemsEnabled = newState -- Enable/disable item highlighting
-        updateHighlights() -- Update the highlights immediately
         ui.notify({
             title = 'Item ESP Toggle',
             message = 'Buyable Item ESP toggled to ' .. tostring(newState),
-            duration = 3
-        })
-    end)
-
-    -- Chest ESP toggle (new feature)
-    local chestESPToggle = section1:addToggle({
-        text = 'Chest ESP',
-        state = false
-    })
-    chestESPToggle:bindToEvent('onToggle', function(newState)
-        chestESPEnabled = newState -- Enable/disable Chest ESP
-        updateHighlights() -- Update the highlights immediately
-        ui.notify({
-            title = 'Chest ESP Toggle',
-            message = 'Chest ESP toggled to ' .. tostring(newState),
             duration = 3
         })
     end)
@@ -274,6 +285,30 @@ do
     end)
 end
 
+-- Third section under Visuals (Loot ESP)
+local lootESPSection = visualsMenu:addSection({
+    text = 'Loot ESP',
+    side = 'left',
+    showMinButton = true
+})
+
+do
+    -- Chest ESP toggle
+    local chestESPToggle = lootESPSection:addToggle({
+        text = 'Chest ESP',
+        state = false
+    })
+    chestESPToggle:bindToEvent('onToggle', function(newState)
+        chestHighlightEnabled = newState -- Enable/disable chest highlighting
+        updateHighlights() -- Update the highlights immediately
+        ui.notify({
+            title = 'Chest ESP Toggle',
+            message = 'Chest ESP toggled to ' .. tostring(newState),
+            duration = 3
+        })
+    end)
+end
+
 -- Player Menu
 local playerMenu = window:addMenu({
     text = 'Player'
@@ -292,11 +327,47 @@ do
         text = 'Rejoin Server',
         style = 'large'
     }, function()
+        -- Rejoin the server
+        local placeId = game.PlaceId
+        local teleportService = game:GetService("TeleportService")
+        teleportService:Teleport(placeId, player)
         ui.notify({
             title = 'Rejoin Server',
-            message = 'Please Wait!',
+            message = 'Rejoining the server...',
             duration = 3
         })
+    end)
+
+    -- Spectate Player toggle
+    local spectatePlayerToggle = section1:addToggle({
+        text = 'Spectate Player',
+        state = false
+    })
+
+    -- Textbox for player name
+    local playerNameTextbox = section1:addTextbox({
+        text = 'Player Name'
+    })
+
+    spectatePlayerToggle:bindToEvent('onToggle', function(newState)
+        spectatePlayerEnabled = newState -- Enable/disable player spectating
+        if spectatePlayerEnabled then
+            spectatePlayer(spectatePlayerName) -- Start spectating
+        else
+            stopSpectating() -- Stop spectating
+        end
+        ui.notify({
+            title = 'Spectate Toggle',
+            message = 'Spectate Player toggled to ' .. tostring(newState),
+            duration = 3
+        })
+    end)
+
+    playerNameTextbox:bindToEvent('onFocusLost', function(text)
+        spectatePlayerName = text -- Update the spectate player name
+        if spectatePlayerEnabled then
+            spectatePlayer(spectatePlayerName) -- Update spectating if already enabled
+        end
     end)
 end
 
@@ -319,17 +390,6 @@ do
         print("Speed set to:", value)
     end)
     
-    section2:addTextbox({
-        text = 'Player Name'
-    }):bindToEvent('onFocusLost', function(text)
-        ui.notify({
-            title = 'Player Name',
-            message = 'Name entered: ' .. text,
-            duration = 4
-        })
-    end)
-
-
     -- Slider to adjust player jump power
     section2:addSlider({
         text = 'Jump Power',
@@ -338,14 +398,20 @@ do
         step = 1,
         val = 50
     }, function(newValue)
-        -- Adjust player's jump power
-        local humanoid = character:WaitForChild("Humanoid")
-        humanoid.JumpPower = newValue
+        -- Assuming a humanoid exists in the character
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.JumpPower = newValue
+        end
+        ui.notify({
+            title = 'Jump Power',
+            message = 'Jump Power set to ' .. tostring(newValue),
+            duration = 3
+        })
     end)
 end
 
--- Tp Walk Stuff
-
+-- Walking Stuff
 local movementDirection = Vector3.new(0, 0, 0)
 
 -- Function to update the movement direction based on key inputs
@@ -398,4 +464,5 @@ UserInputService.InputEnded:Connect(updateMovementDirection)
 RunService.RenderStepped:Connect(function(deltaTime)
     updateMovementDirection()
     moveCharacter(deltaTime)
+    updateHighlights() -- Update highlights dynamically
 end)
