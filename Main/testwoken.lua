@@ -95,26 +95,6 @@ local function updateHighlights()
     end
 end
 
--- Highlight chests
-    if chestHighlightEnabled then
-        if thrownFolder then
-            for _, model in pairs(thrownFolder:GetChildren()) do
-                if model:IsA("Model") and model:FindFirstChild("Lid") then
-                    createHighlight(model, highlightFillColor, outlineColor)
-                else
-                    removeHighlight(model)
-                end
-            end
-        end
-    else
-        if thrownFolder then
-            for _, model in pairs(thrownFolder:GetChildren()) do
-                removeHighlight(model)
-            end
-        end
-    end
-end
-
 -- Function to update highlight colors
 local function updateHighlightColors(newFillColor, newOutlineColor)
     highlightFillColor = newFillColor or highlightFillColor
@@ -198,29 +178,6 @@ do
         ui.notify({
             title = 'Item ESP Toggle',
             message = 'Buyable Item ESP toggled to ' .. tostring(newState),
-            duration = 3
-        })
-    end)
-
-    -- Third section under Visuals (Loot ESP)
-local lootESPSection = visualsMenu:addSection({
-    text = 'Loot ESP',
-    side = 'left',
-    showMinButton = true
-})
-
-do
-    -- Chest ESP toggle
-    local chestESPToggle = lootESPSection:addToggle({
-        text = 'Chest ESP',
-        state = false
-    })
-    chestESPToggle:bindToEvent('onToggle', function(newState)
-        chestHighlightEnabled = newState -- Enable/disable chest highlighting
-        updateHighlights() -- Update the highlights immediately
-        ui.notify({
-            title = 'Chest ESP Toggle',
-            message = 'Chest ESP toggled to ' .. tostring(newState),
             duration = 3
         })
     end)
