@@ -132,12 +132,20 @@ local function stopSpectating()
     camera.CameraSubject = character:FindFirstChildOfClass("Humanoid")
 end
 
--- Player Movement
+-- Walking Stuff
+local movementDirection = Vector3.new(0, 0, 0)
+
+-- Function to update the movement direction based on key inputs
 local function updateMovementDirection()
     movementDirection = Vector3.new(0, 0, 0)
     
+    -- Get the camera's look vector
     local cameraLookVector = camera.CFrame.LookVector
+    
+    -- Break down the look vector into the XZ plane
     local cameraDirection = Vector3.new(cameraLookVector.X, 0, cameraLookVector.Z).Unit
+
+    -- Right direction relative to the camera
     local cameraRight = Vector3.new(camera.CFrame.RightVector.X, 0, camera.CFrame.RightVector.Z).Unit
 
     if UserInputService:IsKeyDown(Enum.KeyCode.W) then
@@ -153,13 +161,16 @@ local function updateMovementDirection()
         movementDirection = movementDirection + cameraRight
     end
 
+    -- Normalize direction to ensure consistent speed
     if movementDirection.Magnitude > 0 then
         movementDirection = movementDirection.Unit
     end
 end
 
+-- Function to move the character using CFrame with increased speed
 local function moveCharacter(deltaTime)
     if movementDirection.Magnitude > 0 then
+        -- Calculate the new position using CFrame
         local displacement = movementDirection * walkSpeed * deltaTime
         local newCFrame = humanoidRootPart.CFrame + displacement
         humanoidRootPart.CFrame = newCFrame
@@ -232,10 +243,16 @@ playerNameTextbox:bindToEvent('onTextChanged', function(newText)
     end
 end)
 
--- Movement Section
-local movementSection = playerMenu:addSection({ text = 'Movement', side = 'right', showMinButton = true })
-movementSection:addSlider({ text = 'Adjust Walkspeed', min = 0, max = 500, step = 1, val = 0 })
-    :bindToEvent('onValueChanged', function(newValue) walkSpeed = newValue end)
+section2:addSlider({
+        text = 'Adjust Speed',
+        min = 1,
+        max = 250,
+        step = 1,
+        val = 10
+    }, function(value)
+        walkSpeed = value -- Update the walkSpeed variable based on the slider value
+        print("Speed set to:", value)
+    end)
 
 -- Main Loop --
 
